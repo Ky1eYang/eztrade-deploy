@@ -1,0 +1,136 @@
+services:
+  postgres:
+    image: ${POSTGRES_IMAGE:-postgres:16-alpine}
+    container_name: star-postgres
+    profiles: ["local-infra"]
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-midplatform}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-midplatform}
+      POSTGRES_DB: ${POSTGRES_DB:-midplatform}
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - ./postgres/data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-midplatform} -d ${POSTGRES_DB:-midplatform}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: ${REDIS_IMAGE:-redis:7-alpine}
+    container_name: star-redis
+    profiles: ["local-infra"]
+    restart: unless-stopped
+    command: ["redis-server", "/usr/local/etc/redis/redis.conf"]
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - ./redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - ./redis/data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-replace_me_redis_password}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  star-platform:
+    image: ${STAR_PLATFORM_IMAGE:-ky1eyang/star-platform:latest}
+    container_name: star-platform
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false
+      redis:
+        condition: service_healthy
+        required: false
+    environment:
+      PYTHONUNBUFFERED: "1"
+      PORT: "${STAR_PLATFORM_PORT:-7800}"
+      WORKERS: "${STAR_PLATFORM_WORKERS:-4}"
+      REDIS_URL: ${STAR_PLATFORM_REDIS_URL:-redis://default:redis123@redis:6379/0}
+      DATABASE_URL: ${STAR_PLATFORM_DATABASE_URL:-postgresql+psycopg://midplatform:midplatform@postgres:5432/midplatform}
+      APP_NAME: ${STAR_PLATFORM_APP_NAME:-midplatform}
+      RQDATAC_LICENSE_KEY: ${RQDATAC_LICENSE_KEY:-your_license_key_here}
+      JUPITER_API_KEY: ${STAR_PLATFORM_JUPITER_API_KEY:-your_jupiter_api_key_here}
+      SPYDER_TASKS: ${STAR_PLATFORM_SPYDER_TASKS:-okx_web3,jupiter,polymarket}
+    ports:
+      - "${STAR_PLATFORM_PORT:-7800}:7800"
+
+  eztrade-server:
+    image: ${EZTRADE_SERVER_IMAGE:-ky1eyang/eztrade-server:latest}
+    container_name: eztrade-server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+        required: false
+      redis:
+        condition: service_healthy
+        required: false
+    environment:
+      CONFIG_FILE: ${EZTRADE_CONFIG_FILE:-/config/cfg.toml}
+      LOG_LEVEL: ${EZTRADE_LOG_LEVEL:-info}
+      TZ: ${TZ:-Asia/Shanghai}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
+      OTEL_EXPORTER_OTLP_HEADERS: ${OTEL_EXPORTER_OTLP_HEADERS:-}
+      OTEL_EXPORTER_OTLP_PROTOCOL: ${OTEL_EXPORTER_OTLP_PROTOCOL:-http/protobuf}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-ez-trade}
+      OTEL_SERVICE_VERSION: ${OTEL_SERVICE_VERSION:-0.3.x}
+      OKX_API_KEY: ${OKX_API_KEY:-}
+      OKX_SECRET_KEY: ${OKX_SECRET_KEY:-}
+      OKX_PASSPHRASE: ${OKX_PASSPHRASE:-}
+      BINANCE_API_KEY: ${BINANCE_API_KEY:-}
+      BINANCE_SECRET_KEY: ${BINANCE_SECRET_KEY:-}
+      JUPITER_API_KEY: ${EZTRADE_JUPITER_API_KEY:-}
+      SOLANA_PUBLIC_KEY: ${SOLANA_PUBLIC_KEY:-}
+      SOLANA_PRIVATE_KEY: ${SOLANA_PRIVATE_KEY:-}
+    ports:
+      - "${EZTRADE_PORT:-7878}:7878"
+    volumes:
+      - ./eztrade/config:/config:ro
+      - ./eztrade/certs:/certs:ro
+      - ./logs/eztrade:/app/logs
+
+  star-dashboard:
+    image: ${STAR_DASHBOARD_IMAGE:-ky1eyang/star-dashboard:latest}
+    container_name: star-dashboard
+    restart: unless-stopped
+    depends_on:
+      star-platform:
+        condition: service_started
+      eztrade-server:
+        condition: service_started
+      redis:
+        condition: service_started
+        required: false
+      postgres:
+        condition: service_started
+        required: false
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      PORT: "${STAR_DASHBOARD_PORT:-3000}"
+      PM2_ENV: ${PM2_ENV:-production}
+      PM2_INSTANCES: "${PM2_INSTANCES:-1}"
+      REDIS_HOST: ${DASHBOARD_REDIS_HOST:-redis}
+      REDIS_PORT: "${DASHBOARD_REDIS_PORT:-6379}"
+      REDIS_USERNAME: ${DASHBOARD_REDIS_USERNAME:-default}
+      REDIS_PASSWORD: ${DASHBOARD_REDIS_PASSWORD:-redis123}
+      REDIS_DIR: ${DASHBOARD_REDIS_DIR:-midplatform}
+      REDIS_SANDBOX_ROOT: ${DASHBOARD_REDIS_SANDBOX_ROOT:-eztrade}
+      PY_BACKEND_URL: ${DASHBOARD_PY_BACKEND_URL:-http://star-platform:7800}
+      SANDBOX_BACKEND_URL: ${DASHBOARD_SANDBOX_BACKEND_URL:-http://eztrade-server:7878}
+      NODE_TLS_REJECT_UNAUTHORIZED: "${NODE_TLS_REJECT_UNAUTHORIZED:-0}"
+      TRADE_DB_URL: ${DASHBOARD_TRADE_DB_URL:-postgres://midplatform:midplatform@postgres:5432/midplatform}
+    ports:
+      - "${STAR_DASHBOARD_PORT:-3000}:3000"
+
+networks:
+  default:
+    name: star-stack-network

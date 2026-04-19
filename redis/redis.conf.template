@@ -1,0 +1,10 @@
+bind 0.0.0.0
+port 6379
+protected-mode yes
+
+# Replace with your real Redis password.
+requirepass replace_me_redis_password
+
+appendonly yes
+save 60 1000
+maxmemory-policy allkeys-lru

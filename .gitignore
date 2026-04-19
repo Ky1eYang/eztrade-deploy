@@ -1,0 +1,10 @@
+postgres/data/
+redis/data/
+logs/
+.env
+eztrade/config/cfg.toml
+redis/redis.conf
+
+# Local secrets/certs
+eztrade/certs/*.pem
+eztrade/certs/*.key

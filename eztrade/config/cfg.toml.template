@@ -1,0 +1,18 @@
+[eztrade-server]
+host = "0.0.0.0"
+port = 7878
+tls_enabled = false
+
+log_level = "info"
+log_format = "json"
+
+# Replace these two URLs before first run.
+redis_url = "redis://default:replace_me_redis_password@redis:6379/0"
+redis_root = "eztrade"
+redis_stream_size = 1000
+
+pgsql_url = "postgres://midplatform:replace_me_postgres_password@postgres:5432/midplatform"
+
+# Keep TLS paths for future switch to tls_enabled=true.
+tls_cert_path = "/certs/cert.pem"
+tls_key_path = "/certs/key.pem"
