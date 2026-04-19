@@ -43,6 +43,8 @@ services:
     image: ${STAR_PLATFORM_IMAGE:-ky1eyang/star-platform:latest}
     container_name: star-platform
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
         condition: service_healthy
@@ -60,6 +62,10 @@ services:
       RQDATAC_LICENSE_KEY: ${RQDATAC_LICENSE_KEY:-your_license_key_here}
       JUPITER_API_KEY: ${STAR_PLATFORM_JUPITER_API_KEY:-your_jupiter_api_key_here}
       SPYDER_TASKS: ${STAR_PLATFORM_SPYDER_TASKS:-okx_web3,jupiter,polymarket}
+      http_proxy: ${HTTP_PROXY:-}
+      https_proxy: ${HTTPS_PROXY:-}
+      all_proxy: ${ALL_PROXY:-}
+      no_proxy: ${NO_PROXY:-localhost,127.0.0.1,redis,postgres,star-platform,eztrade-server,star-dashboard,host.docker.internal,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
     ports:
       - "${STAR_PLATFORM_PORT:-7800}:7800"
 
@@ -67,6 +73,9 @@ services:
     image: ${EZTRADE_SERVER_IMAGE:-ky1eyang/eztrade-server:latest}
     container_name: eztrade-server
     restart: unless-stopped
+    command: ["--config", "/config/cfg.toml"]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       postgres:
         condition: service_healthy
@@ -75,7 +84,6 @@ services:
         condition: service_healthy
         required: false
     environment:
-      CONFIG_FILE: ${EZTRADE_CONFIG_FILE:-/config/cfg.toml}
       LOG_LEVEL: ${EZTRADE_LOG_LEVEL:-info}
       TZ: ${TZ:-Asia/Shanghai}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-}
@@ -91,6 +99,10 @@ services:
       JUPITER_API_KEY: ${EZTRADE_JUPITER_API_KEY:-}
       SOLANA_PUBLIC_KEY: ${SOLANA_PUBLIC_KEY:-}
       SOLANA_PRIVATE_KEY: ${SOLANA_PRIVATE_KEY:-}
+      ALL_PROXY: ${ALL_PROXY:-}
+      HTTP_PROXY: ${HTTP_PROXY:-}
+      HTTPS_PROXY: ${HTTPS_PROXY:-}
+      NO_PROXY: ${NO_PROXY:-localhost,127.0.0.1,redis,postgres,star-platform,eztrade-server,star-dashboard,host.docker.internal,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
     ports:
       - "${EZTRADE_PORT:-7878}:7878"
     volumes:
@@ -102,6 +114,8 @@ services:
     image: ${STAR_DASHBOARD_IMAGE:-ky1eyang/star-dashboard:latest}
     container_name: star-dashboard
     restart: unless-stopped
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     depends_on:
       star-platform:
         condition: service_started
@@ -118,16 +132,17 @@ services:
       PORT: "${STAR_DASHBOARD_PORT:-3000}"
       PM2_ENV: ${PM2_ENV:-production}
       PM2_INSTANCES: "${PM2_INSTANCES:-1}"
-      REDIS_HOST: ${DASHBOARD_REDIS_HOST:-redis}
-      REDIS_PORT: "${DASHBOARD_REDIS_PORT:-6379}"
-      REDIS_USERNAME: ${DASHBOARD_REDIS_USERNAME:-default}
-      REDIS_PASSWORD: ${DASHBOARD_REDIS_PASSWORD:-redis123}
-      REDIS_DIR: ${DASHBOARD_REDIS_DIR:-midplatform}
-      REDIS_SANDBOX_ROOT: ${DASHBOARD_REDIS_SANDBOX_ROOT:-eztrade}
-      PY_BACKEND_URL: ${DASHBOARD_PY_BACKEND_URL:-http://star-platform:7800}
-      SANDBOX_BACKEND_URL: ${DASHBOARD_SANDBOX_BACKEND_URL:-http://eztrade-server:7878}
       NODE_TLS_REJECT_UNAUTHORIZED: "${NODE_TLS_REJECT_UNAUTHORIZED:-0}"
-      TRADE_DB_URL: ${DASHBOARD_TRADE_DB_URL:-postgres://midplatform:midplatform@postgres:5432/midplatform}
+      NUXT_REDIS_HOST: ${DASHBOARD_REDIS_HOST:-redis}
+      NUXT_REDIS_PORT: "${DASHBOARD_REDIS_PORT:-6379}"
+      NUXT_REDIS_USERNAME: ${DASHBOARD_REDIS_USERNAME:-default}
+      NUXT_REDIS_PASSWORD: ${DASHBOARD_REDIS_PASSWORD:-redis123}
+      NUXT_REDIS_DIR: ${DASHBOARD_REDIS_DIR:-midplatform}
+      NUXT_REDIS_SANDBOX_ROOT: ${DASHBOARD_REDIS_SANDBOX_ROOT:-eztrade}
+      NUXT_PY_BACKEND_URL: ${DASHBOARD_PY_BACKEND_URL:-http://star-platform:7800}
+      NUXT_SANDBOX_BACKEND_URL: ${DASHBOARD_SANDBOX_BACKEND_URL:-http://eztrade-server:7878}
+      NUXT_HTTP_PROXY: ${HTTP_PROXY:-}
+      NUXT_TRADE_DB_URL: ${DASHBOARD_TRADE_DB_URL:-postgres://midplatform:midplatform@postgres:5432/midplatform}
     ports:
       - "${STAR_DASHBOARD_PORT:-3000}:3000"
 
