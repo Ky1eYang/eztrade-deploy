@@ -61,7 +61,7 @@ services:
       APP_NAME: ${STAR_PLATFORM_APP_NAME:-midplatform}
       RQDATAC_LICENSE_KEY: ${RQDATAC_LICENSE_KEY:-your_license_key_here}
       JUPITER_API_KEY: ${STAR_PLATFORM_JUPITER_API_KEY:-your_jupiter_api_key_here}
-      SPYDER_TASKS: ${STAR_PLATFORM_SPYDER_TASKS:-okx_web3,jupiter,polymarket}
+      SPYDER_TASKS: ${STAR_PLATFORM_SPYDER_TASKS:-}
       http_proxy: ${HTTP_PROXY:-}
       https_proxy: ${HTTPS_PROXY:-}
       all_proxy: ${ALL_PROXY:-}
