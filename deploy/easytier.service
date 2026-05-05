@@ -1,0 +1,11 @@
+[Unit]
+Description=easytier client on boot
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/root/easytier-linux-x86_64/easytier-core --network-name NAME --network-secret PASSW -p tcp://ENDPOINT:URL --ipv4 IP --no-listener
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

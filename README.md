@@ -17,6 +17,10 @@
 star-service-deploy/
 ├── .env.template
 ├── docker-compose.yml
+├── deploy/                    # 新机器基础环境安装脚本
+│   ├── deploy.sh              #   一键安装 Docker + EasyTier
+│   ├── easytier.service       #   systemd 服务单元文件
+│   └── readme.md              #   deploy 使用说明
 ├── postgres/
 │   └── init/
 │       └── 01-init.sql
@@ -28,6 +32,24 @@ star-service-deploy/
     └── certs/
         └── README.md
 ```
+
+## 0. 新机器环境准备（首次）
+
+如果目标服务器是**全新的 Ubuntu x64 机器**，需要先安装 Docker 和 EasyTier（内网互联）：
+
+```bash
+# 上传 deploy/ 目录至目标机器
+scp -r ./deploy/ root@<server-ip>:~/
+
+# 登录后执行（install_dir 须与 easytier.service 中路径一致）
+ssh root@<server-ip>
+chmod +x ~/deploy/deploy.sh
+sudo ~/deploy/deploy.sh /root/easytier-linux-x86_64
+```
+
+> 详细参数说明见 [deploy/readme.md](deploy/readme.md)。
+
+---
 
 ## 1. 初始化（首次）
 
