@@ -13,7 +13,9 @@ ExecStart=/root/easytier-linux-x86_64/easytier-core \
     --network-secret ${ET_NETWORK_SECRET} \
     -p tcp://${ET_PEER_ENDPOINT} \
     --ipv4 ${ET_IPV4} \
-    --no-listener
+    -l tcp://0.0.0.0:11010 \
+    --default-protocol tcp \
+    --p2p-only 
 Restart=on-failure
 
 [Install]

@@ -102,6 +102,7 @@ ufw enable
 
 
 ufw allow 22/tcp
+ufw allow 11010
 
 ufw allow from 10.126.126.0/24 to any port 3000 proto tcp
 ufw allow from 10.126.126.0/24 to any port 7878 proto tcp
