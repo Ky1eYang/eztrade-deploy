@@ -4,7 +4,16 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/root/easytier-linux-x86_64/easytier-core --network-name NAME --network-secret PASSW -p tcp://ENDPOINT:URL --ipv4 IP --no-listener
+Environment=ET_NETWORK_NAME=NAME
+Environment=ET_NETWORK_SECRET=PASSW
+Environment=ET_PEER_ENDPOINT=ENDPOINT:PORT
+Environment=ET_IPV4=IP
+ExecStart=/root/easytier-linux-x86_64/easytier-core \
+    --network-name ${ET_NETWORK_NAME} \
+    --network-secret ${ET_NETWORK_SECRET} \
+    -p tcp://${ET_PEER_ENDPOINT} \
+    --ipv4 ${ET_IPV4} \
+    --no-listener
 Restart=on-failure
 
 [Install]
